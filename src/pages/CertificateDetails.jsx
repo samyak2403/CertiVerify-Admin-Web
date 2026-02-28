@@ -8,6 +8,7 @@ function CertificateDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [certificate, setCertificate] = useState(null)
+  const [imageUrl, setImageUrl] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,7 +33,6 @@ function CertificateDetails() {
           certificateType: data.certificate_type || 'General',
           duration: data.duration || 'N/A',
           imagePath: data.image_path || '',
-          imageBase64: data.image_base64 || '',
           extractedText: data.extracted_text || '',
           score: data.score || 0,
           verificationStatus: data.verification_status || 'PENDING',
@@ -43,6 +43,18 @@ function CertificateDetails() {
           createdAt: data.created_at || 0,
           updatedAt: data.updated_at || 0
         })
+
+        // Load image URL directly from Firestore
+        // Priority: image_storage_url (Firebase Storage URL) > image_url > imageUrl > image_path
+        const imageUrl = data.image_storage_url || data.image_url || data.imageUrl || data.image_path || data.imagePath
+
+        if (imageUrl) {
+          console.log('Image URL found:', imageUrl)
+          setImageUrl(imageUrl)
+        } else {
+          console.log('No image URL found in certificate data')
+          console.log('Available fields:', Object.keys(data))
+        }
       } else {
         alert('Certificate not found!')
         navigate('/certificates')
@@ -79,14 +91,18 @@ function CertificateDetails() {
 
       <div className="details-container">
         {/* Certificate Image */}
-        {certificate.imageBase64 && (
+        {imageUrl && (
           <div className="image-section">
             <h2>Certificate Image</h2>
             <div className="image-wrapper">
-              <img 
-                src={certificate.imageBase64} 
-                alt="Certificate" 
+              <img
+                src={imageUrl}
+                alt="Certificate"
                 className="certificate-image"
+                onError={(e) => {
+                  console.error('Image failed to load:', imageUrl)
+                  e.target.style.display = 'none'
+                }}
               />
             </div>
           </div>

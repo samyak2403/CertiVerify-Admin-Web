@@ -51,7 +51,6 @@ function Certificates() {
           certificateType: data.certificate_type || 'General',
           duration: data.duration || 'N/A',
           imagePath: data.image_path || '',
-          imageBase64: data.image_base64 || '',
           extractedText: data.extracted_text || '',
           score: data.score || 0,
           verificationStatus: data.verification_status || 'PENDING',

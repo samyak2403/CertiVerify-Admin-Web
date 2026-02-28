@@ -8,6 +8,7 @@ function EditCertificateStatus() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [certificate, setCertificate] = useState(null)
+  const [imageUrl, setImageUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -37,15 +38,27 @@ function EditCertificateStatus() {
           verificationStatus: data.verification_status || 'PENDING',
           score: data.score || 0,
           remarks: data.remarks || '',
-          imageBase64: data.image_base64 || ''
+          imagePath: data.image_path || ''
         }
-        
+
         setCertificate(cert)
         setFormData({
           verificationStatus: cert.verificationStatus,
           score: cert.score,
           remarks: cert.remarks
         })
+        
+        // Load image URL directly from Firestore
+        // Priority: image_storage_url (Firebase Storage URL) > image_url > imageUrl > image_path
+        const imageUrl = data.image_storage_url || data.image_url || data.imageUrl || data.image_path || data.imagePath
+        
+        if (imageUrl) {
+          console.log('Image URL found:', imageUrl)
+          setImageUrl(imageUrl)
+        } else {
+          console.log('No image URL found in certificate data')
+          console.log('Available fields:', Object.keys(data))
+        }
       } else {
         showMessage('error', 'Certificate not found!')
         setTimeout(() => navigate('/certificates'), 2000)
@@ -80,7 +93,7 @@ function EditCertificateStatus() {
       })
 
       showMessage('success', 'Certificate status updated successfully!')
-      
+
       // Redirect after 1.5 seconds
       setTimeout(() => {
         navigate('/certificates')
@@ -138,9 +151,16 @@ function EditCertificateStatus() {
         <div className="preview-section">
           <h2>Certificate Preview</h2>
           
-          {certificate.imageBase64 && (
+          {imageUrl && (
             <div className="image-preview">
-              <img src={certificate.imageBase64} alt="Certificate" />
+              <img 
+                src={imageUrl} 
+                alt="Certificate"
+                onError={(e) => {
+                  console.error('Image failed to load:', imageUrl)
+                  e.target.style.display = 'none'
+                }}
+              />
             </div>
           )}
 
@@ -173,7 +193,7 @@ function EditCertificateStatus() {
         {/* Edit Form */}
         <div className="form-section">
           <h2>Update Verification Status</h2>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Verification Status *</label>
@@ -236,9 +256,9 @@ function EditCertificateStatus() {
               />
               <div className="score-indicator">
                 <div className="score-bar">
-                  <div 
-                    className="score-fill" 
-                    style={{width: `${formData.score}%`}}
+                  <div
+                    className="score-fill"
+                    style={{ width: `${formData.score}%` }}
                   ></div>
                 </div>
                 <span className="score-value">{formData.score.toFixed(2)}%</span>
@@ -260,9 +280,9 @@ function EditCertificateStatus() {
               <button type="submit" className="btn-save" disabled={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
-              <button 
-                type="button" 
-                className="btn-cancel" 
+              <button
+                type="button"
+                className="btn-cancel"
                 onClick={() => navigate('/certificates')}
                 disabled={saving}
               >
